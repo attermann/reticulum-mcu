@@ -12,6 +12,6 @@ Also note that there is currently zero persistence in the firmware so all routin
 Currently only configured for and tested on a LilyGo T-Beam v1.1 board. Support for some other LilyGo LoRa boards is likely trivial with the addition of a PlatformIO build profile and changing of the board selection in `src/variants/config.h`, but as of yet no other variants have been tested.
 
 ## Configuration
-- Config for a particule board varient is selected by n-commenting the relevant #define in `src/variants/config.h`.
+- Config for a particular board variant is selected by un-commenting the relevant #define in `src/variants/config.h`.
 - UDP Interface (to test network bridging) can be enabled by un-commenting `#define UDP_INTERFACE` in `main.cpp` and specifying WiFi SSID and passowrd in the call to `udp_interface.start()`.
 - Log verbosity is controlled through the call to `RNS::loglevel()`.
