@@ -70,13 +70,6 @@ bool LoRaInterface::start() {
 	// initialize radio
 	if (!LoRa.begin(_radio_frequency)) {
 		error("LoRa init failed. Check your connections.");
-#ifdef HAS_DISPLAY
-		if (u8g2) {
-			u8g2->clearBuffer();
-			u8g2->drawStr(0, 12, "Initializing: FAIL!");
-			u8g2->sendBuffer();
-		}
-#endif
 		return false;
 	}
 
@@ -88,14 +81,6 @@ bool LoRaInterface::start() {
 
 	info("LoRa init succeeded.");
 	extreme("LoRa bandwidth is " + std::to_string(Utilities::OS::round(bitrate()/1000.0, 2)) + " Kbps");
-
-#ifdef HAS_DISPLAY
-		if (u8g2) {
-			u8g2->clearBuffer();
-			u8g2->drawStr(0, 12, "Ready!");
-			u8g2->sendBuffer();
-		}
-#endif
 
 	online(true);
 	return true;
@@ -113,11 +98,18 @@ void LoRaInterface::loop() {
 		if (available > 0) {
 			extreme("LoRaInterface: receiving bytes...");
 
+			// read header (for detecting split packets)
+		    uint8_t header  = LoRa.read();
+
+			// CBA TODO add support for split packets
+
 			// read packet
 			buffer.clear();
 			while (LoRa.available()) {
 				buffer << (uint8_t)LoRa.read();
 			}
+
+			on_incoming(buffer);
 
 			Serial.println("RSSI: " + String(LoRa.packetRssi()));
 			Serial.println("Snr: " + String(LoRa.packetSnr()));
@@ -139,8 +131,6 @@ void LoRaInterface::loop() {
 				u8g2->sendBuffer();
 			}
 #endif
-
-			on_incoming(buffer);
 		}
 	}
 }
@@ -158,6 +148,12 @@ void LoRaInterface::loop() {
 			// Send packet
 
 			LoRa.beginPacket();                   // start packet
+
+			// write header (for detecting split packets)
+		    uint8_t header  = Cryptography::randomnum(256) & 0xF0;
+			LoRa.write(header);
+
+			// CBA TODO add support for split packets
 
 			// add payload
 			//LoRa.print((const char*)data.data());

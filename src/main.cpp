@@ -11,6 +11,7 @@
 #include <Utilities/OS.h>
 
 #include "LoRaInterface.h"
+#include "RadioLibInterface.h"
 
 #include <Arduino.h>
 #include "variants/config.h"
@@ -23,7 +24,7 @@
 
 //#define UDP_INTERFACE
 #define LORA_INTERFACE
-//#define TEST_DESTINATIONS
+#define TEST_DESTINATIONS
 
 
 // Let's define an app name. We'll use this for all
@@ -113,7 +114,8 @@ RNS::Destination destination({RNS::Type::NONE});
 RNS::Interfaces::UDPInterface udp_interface;
 #endif
 #ifdef LORA_INTERFACE
-LoRaInterface lora_interface;
+//LoRaInterface lora_interface;
+RadioLibInterface lora_interface;
 #endif
 
 //ExampleAnnounceHandler announce_handler((const char*)"example_utilities.announcesample.fruits");
@@ -136,9 +138,6 @@ void reticulum_setup() {
 
 	try {
 
-		RNS::head("Creating Reticulum instance...", RNS::LOG_EXTREME);
-		reticulum = RNS::Reticulum();
-
 		RNS::head("Registering Interface instances with Transport...", RNS::LOG_EXTREME);
 #ifdef UDP_INTERFACE
 		udp_interface.mode(RNS::Type::Interface::MODE_GATEWAY);
@@ -151,13 +150,34 @@ void reticulum_setup() {
 
 #ifdef UDP_INTERFACE
 		RNS::head("Starting UDPInterface...", RNS::LOG_EXTREME);
-		udp_interface.start("some_ssid", "some_password");
+		udp_interface.start("broadmind-guest", "brcguest", 2424);
 #endif
 
 #ifdef LORA_INTERFACE
 		RNS::head("Starting LoRaInterface...", RNS::LOG_EXTREME);
-		lora_interface.start();
+		if (lora_interface.start()) {
+#ifdef HAS_DISPLAY
+			if (u8g2) {
+				u8g2->clearBuffer();
+				u8g2->drawStr(0, 12, "LoRa Ready!");
+				u8g2->sendBuffer();
+			}
 #endif
+		}
+		else {
+#ifdef HAS_DISPLAY
+			if (u8g2) {
+				u8g2->clearBuffer();
+				u8g2->drawStr(0, 12, "Initializing: FAIL!");
+				u8g2->sendBuffer();
+			}
+#endif
+		}
+#endif
+
+		RNS::head("Creating Reticulum instance...", RNS::LOG_EXTREME);
+		reticulum = RNS::Reticulum();
+		reticulum.transport_enabled(true);
 
 		RNS::head("Creating Identity instance...", RNS::LOG_EXTREME);
 
@@ -197,6 +217,8 @@ void reticulum_setup() {
 		RNS::head("Registering announce handler with Transport...", RNS::LOG_EXTREME);
 		RNS::Transport::register_announce_handler(announce_handler);
 
+		reticulum.start();
+
 		RNS::head("Ready!", RNS::LOG_EXTREME);
 	}
 	catch (std::exception& e) {
@@ -228,9 +250,11 @@ void reticulum_teardown() {
 
 void userKey(void)
 {
+#ifdef BUTTON_PIN
 	if (digitalRead(BUTTON_PIN) == LOW) {
 		send_announce = true;
 	}
+#endif
 }
 
 void setup() {
@@ -239,8 +263,10 @@ void setup() {
 	initBoard();
 
 	// Setup user button
+#ifdef BUTTON_PIN
 	pinMode(BUTTON_PIN, INPUT);
 	attachInterrupt(BUTTON_PIN, userKey, FALLING);  
+#endif
 
 	RNS::loglevel(RNS::LOG_EXTREME);
 

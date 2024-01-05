@@ -4,6 +4,10 @@
 DISPLAY_MODEL *u8g2 = nullptr;
 #endif
 
+#ifdef HAS_SDCARD
+SPIClass SDSPI(HSPI);
+#endif
+
 #if defined(HAS_PMU)
 
 XPowersLibInterface *PMU = NULL;

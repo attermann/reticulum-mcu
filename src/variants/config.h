@@ -1,7 +1,7 @@
 #pragma once
 
 // #define LILYGO_TBeam_V0_7
-#define LILYGO_TBeam_V1_X
+//#define LILYGO_TBeam_V1_X
 // #define LILYGO_T3_V1_0
 // #define LILYGO_T3_V1_3
 // #define LILYGO_T3_V1_6
